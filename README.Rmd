@@ -1,0 +1,140 @@
+---
+title: "README.Rmd"
+author: "Lukas Robinson"
+date: "2/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+iris<-as_tibble(iris)
+```
+
+1.Rename each variable so that it is all lower-case and uses an underscore _ instead of a period . in the name (the recommended coding style in the tidyverse style guide). Print the resulting table.
+
+```{r}
+flower_sample_size<-rename(
+  iris,
+  sepal_length=Sepal.Length,
+  sepal_width=Sepal.Width,
+  petal_length=Petal.Length,
+  petal_width=Petal.Width,
+  species=Species
+)
+flower_sample_size
+```
+
+2.Convert the four numerical variables from cm to mm by multiplying by 10. Print the resulting table.
+
+```{r}
+mm<-mutate(
+  flower_sample_size,
+  petal_length = petal_length * 10,
+  petal_width = petal_width * 10,
+  sepal_length=sepal_length*10,
+  sepal_width=sepal_width*10
+)
+mm
+```
+
+3.Calculate sepal area and petal area (area is equal to length multiplied by width). Print a table with only the variables sepal area, petal area, and species.
+
+```{r}
+area<-mutate(mm,sepal_area = sepal_length*sepal_width,
+             petal_area=petal_length*petal_width)
+species_area<-select(area,sepal_area,petal_area,species
+)
+species_area
+```
+
+4.Calculate the following statistics for the entire dataset from the sepal length variable and print the resulting table:
+
+sample size
+maximum value
+minimum value
+range
+median
+first quartile (q1)
+third quartile (q2)
+inter-quartile range (iqr)
+
+```{r}
+sepal_summary<-summarize(mm, sample_size = n(),
+          max=max(sepal_length),
+          min=min(sepal_length),
+          range=max-min,
+          med=median(sepal_length),
+          q1=quantile(sepal_length, .25),
+          q3=quantile(sepal_length, .75),
+          IQR=IQR(sepal_length)
+)
+sepal_summary
+```
+
+5.Calculate the following statistics for each species from the petal width variable and print the resulting table:
+
+sample size
+mean
+standard deviation
+variance
+standard error of the mean
+approximate 95% confidence interval
+
+```{r}
+petals_grouped<-group_by(mm, species)
+petals_grouped
+
+summarize(petals_grouped,mean_width=mean(petal_width))
+
+petal_summary<-summarize(
+           petals_grouped,
+           sampl_size=n(),
+           mean=mean(petal_width),
+           sd=sd(petal_width),
+           var=var(petal_width),
+           sem=sd/sqrt(sampl_size),
+           ci_upper=mean+2*sem,
+           ci_lower=mean-2*sem
+)
+petal_summary
+```
+
+6.Visualize the relationship between petal width and species using a strip plot.
+
+```{r}
+mm_striplot<-ggplot(data=mm)+
+  geom_jitter(mapping=aes(x=species,y=petal_length), alpha =.4
+)
+mm_striplot
+```
+
+7.Starting with the previous graph, add the mean and 95% confidence interval for each species.
+
+```{r}
+ggplot(data=mm)+
+  geom_jitter(mapping=aes(x=species,y=petal_width), alpha =.4)+
+  geom_crossbar(
+    data=petal_summary,
+    mapping=aes(x=species, y=mean,ymax=ci_upper,
+                ymin=ci_lower),
+    color="red"
+  )
+```
+
+8.Visualize the relationship between petal length, petal width, and species using a scatterplot. Map the two numerical variables to the x and y axes and map species to the color and shape aesthetics.
+
+```{r}
+ggplot(data=mm)+
+  geom_point(mapping=aes(x=petal_width,y=petal_length,color=species))
+```
+
+```{r}
+sessioninfo::session_info()
+```
+
